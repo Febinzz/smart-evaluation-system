@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Evaluation AI - Forgot Username</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="frontpage.css">
+<link rel="stylesheet" href="front.css">
+<style>
+  .recovery-note {
+    margin-top: 10px;
+    color: #555;
+    line-height: 1.6;
+    font-size: 0.98rem;
+  }
+
+  .recovery-form {
+    text-align: left;
+  }
+
+  .recovery-form label {
+    display: block;
+    margin: 16px 0 8px;
+    color: #5a0f1b;
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  .recovery-form .msg {
+    margin-top: 14px;
+    min-height: 22px;
+    font-size: 0.95rem;
+    color: #6a5b58;
+    text-align: center;
+  }
+
+  .recovery-links {
+    margin-top: 18px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 0.9rem;
+  }
+
+  .recovery-links a {
+    color: #5a0f1b;
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  .recovery-links a:hover {
+    text-decoration: underline;
+  }
+
+</style>
+</head>
+
+<body>
+
+<div class="left">
+  <i class="fas fa-user-graduate edu-left l1"></i>
+  <i class="fas fa-book-reader edu-left l2"></i>
+  <i class="fas fa-id-card edu-left l3"></i>
+
+  <img src="frontpage.png" class="logo">
+
+  <h1 class="title">USERNAME HELP</h1>
+  <p class="subtitle">
+    Recover the username linked to your account in the same secure portal style.
+  </p>
+  <p class="recovery-note">
+    We will email the username only if the address belongs to a registered account.
+  </p>
+</div>
+
+<div class="right">
+  <i class="fas fa-graduation-cap edu-right r1"></i>
+  <i class="fas fa-book edu-right r2"></i>
+  <i class="fas fa-pen edu-right r3"></i>
+
+  <div class="login-box">
+    <div style="text-align:center; margin-bottom:20px;">
+      <i class="fas fa-user-shield" style="font-size:3rem; color:#5a0f1b;"></i>
+    </div>
+    <div class="login-title">Forgot Username?</div>
+
+    <form class="recovery-form" onsubmit="event.preventDefault(); sendUsername();">
+      <label for="email">Registered Email Address</label>
+      <input id="email" type="email" placeholder="user@gmail.com" autocomplete="email" required>
+
+      <button id="sendBtn" type="submit">
+        <i class="fas fa-paper-plane"></i> Send Username
+      </button>
+
+      <div id="msg" class="msg"></div>
+
+      <div class="recovery-links">
+        <a href="forgot-password.html">Forgot Password?</a>
+        <a href="reset-password.html">Already have OTP?</a>
+        <a id="back-to-login" href="#">Login</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+async function sendUsername() {
+  const email = document.getElementById('email').value.trim();
+  const msg = document.getElementById('msg');
+  const btn = document.getElementById('sendBtn');
+  msg.textContent = '';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/forgot-username', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    msg.textContent = data.message || 'Request completed';
+  } catch (err) {
+    msg.textContent = 'Something went wrong. Please try again.';
+  } finally {
+    btn.disabled = false;
+  }
+}
+</script>
+
+<script>
+// Navigate back to the appropriate login page based on optional role param
+function initBackToLogin(){
+  const params = new URLSearchParams(window.location.search);
+  const role = (params.get('role') || '').toLowerCase();
+  const target = role === 'teacher' ? 'admin portal.html' : 'student portal.html';
+  const el = document.getElementById('back-to-login');
+  if(el) el.href = target;
+}
+
+// Also propagate role between recovery pages
+function propagateRoleToRecoveryLinks(){
+  const params = new URLSearchParams(window.location.search);
+  const role = params.get('role');
+  if(!role) return;
+  const links = document.querySelectorAll('.recovery-links a');
+  links.forEach(a=>{
+    if(a.id === 'back-to-login') return;
+    const url = new URL(a.getAttribute('href'), window.location.origin);
+    url.searchParams.set('role', role);
+    a.href = url.pathname + url.search;
+  });
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{ initBackToLogin(); propagateRoleToRecoveryLinks(); });
+</script>
+
+</body>
+</html>

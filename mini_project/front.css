@@ -1,0 +1,86 @@
+/* Popup/modal styles extracted from student dashboard */
+.modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.6);
+    display:none;
+    justify-content:center;
+    align-items:center;
+    z-index:1000;
+}
+
+.modal.show{
+    display:flex;
+}
+
+.close-btn{
+    position:absolute;
+    top:15px;
+    right:20px;
+    font-size:22px;
+    font-weight:bold;
+    cursor:pointer;
+    color:#5a0f1b;
+}
+
+/* Small utility to ensure modal content is scrollable on small screens */
+.modal .register-box{
+    max-height:80vh;
+    overflow:auto;
+}
+
+/* Popup inner styles (registration form) */
+.modal .register-box{
+    background:#ffffff;
+    padding:35px;
+    border-radius:18px;
+    box-shadow:0 20px 40px rgba(0,0,0,0.25);
+    width:520px;
+    max-width:94%;
+    position:relative;
+}
+
+.modal .register-title{
+    font-size:1.7rem;
+    font-weight:700;
+    color:#5a0f1b;
+    margin-bottom:20px;
+    text-align:center;
+}
+
+.modal .form-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+}
+
+.modal .register-box input{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid #ddd;
+    border-radius:10px;
+    font-size:14px;
+}
+
+.modal .register-box input:focus{
+    outline:none;
+    border-color:#5a0f1b;
+    box-shadow:0 0 8px rgba(90,15,27,0.12);
+}
+
+.modal .file-input{ grid-column:1/3; }
+
+.modal .register-box button{
+    grid-column:1/3;
+    padding:12px 18px;
+    background:#5a0f1b;
+    color:#fff;
+    border:none;
+    border-radius:12px;
+    font-weight:600;
+    cursor:pointer;
+}
+
+.modal .register-box button:hover{
+    background:#7a1f2d;
+}

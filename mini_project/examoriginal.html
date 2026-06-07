@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Evaluation System - Exam Mode</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: #f4f6f9;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            margin: 6px 0;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin-top: 15px;
+            background: green;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .question-box {
+            background: white;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+
+        #finalScore {
+            font-size: 22px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div style="margin-bottom:20px;">
+    <a href="student dashboard.html" style="padding:10px 15px; background:#5a0f1b; color:white; text-decoration:none; border-radius:6px; font-size:14px; display:inline-flex; align-items:center; gap:8px; cursor:pointer; transition:0.3s ease;" onmouseover="this.style.background='#7a1f2d';" onmouseout="this.style.background='#5a0f1b';" title="Back to student dashboard">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+
+<h2>Smart Evaluation System - Exam Mode</h2>
+
+<label>Enter Total Number of Questions:</label>
+<input type="number" id="totalQuestions" min="1" placeholder="Enter number of questions">
+
+<button onclick="generateQuestions()">Generate Questions</button>
+
+<div id="questionsContainer"></div>
+
+<button onclick="submitExam()">Submit Exam</button>
+
+<div id="finalScore"></div>
+
+<script>
+function generateQuestions() {
+    const total = document.getElementById("totalQuestions").value;
+    const container = document.getElementById("questionsContainer");
+    container.innerHTML = "";
+
+    for (let i = 1; i <= total; i++) {
+        container.innerHTML += `
+            <div class="question-box">
+                <h3>Question ${i}</h3>
+
+                <label>Question:</label>
+                <textarea id="question${i}" placeholder="Enter question here"></textarea>
+
+                <label>Teacher Answer:</label>
+                <textarea id="teacher${i}" placeholder="Enter correct answer"></textarea>
+
+                <label>Student Answer:</label>
+                <textarea id="student${i}" placeholder="Enter student answer"></textarea>
+
+                <label>Type:</label>
+                <select id="type${i}">
+                    <option value="numerical">Numerical</option>
+                    <option value="code">Code</option>
+                    <option value="direct">Direct Fill</option>
+                    <option value="english">English Semantic</option>
+                </select>
+
+                <div id="result${i}" style="margin-top: 8px; font-weight: bold;"></div>
+            </div>
+        `;
+    }
+}
+
+async function submitExam() {
+    const total = document.getElementById("totalQuestions").value;
+    let score = 0;
+
+    for (let i = 1; i <= total; i++) {
+        const question = document.getElementById(`question${i}`).value;
+        const teacher = document.getElementById(`teacher${i}`).value;
+        const student = document.getElementById(`student${i}`).value;
+        const type = document.getElementById(`type${i}`).value;
+
+        const response = await fetch("/evaluate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                question: question,
+                teacher_answer: teacher,
+                student_answer: student,
+                type: type
+            })
+        });
+
+        const data = await response.json();
+        const resultElement = document.getElementById(`result${i}`);
+
+        if (data.correct === true) {
+            resultElement.innerHTML = "✔ Correct";
+            resultElement.style.color = "green";
+            score++;
+        } else {
+            resultElement.innerHTML = "✖ Wrong";
+            resultElement.style.color = "red";
+        }
+    }
+
+    document.getElementById("finalScore").innerHTML =
+        `Final Score: ${score} / ${total}`;
+}
+</script>
+
+</body>
+</html>

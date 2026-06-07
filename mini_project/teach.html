@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Evaluation System | Teacher Dashboard</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="teach.css">
+    <style>
+        /* Desktop-only picker: hide on small screens, show on desktop */
+        .desktop-only{display:none}
+        .mobile-only{display:block}
+        @media(min-width:701px){
+            .desktop-only{display:block}
+            .mobile-only{display:none}
+            .picker-popover{position:absolute; background:#fff; border:1px solid #ddd; box-shadow:0 6px 18px rgba(0,0,0,0.08); padding:10px; border-radius:8px; z-index:9999; max-height:260px; overflow:auto}
+        }
+    </style>
+</head>
+<body>
+<script>
+// Prevent showing protected content from bfcache/back navigation.
+// Hide page until we validate the teacher session; if invalid, redirect to login.
+(function(){
+    document.documentElement.style.visibility = 'hidden';
+    // pageshow: if page restored from bfcache, force a revalidation
+    window.addEventListener('pageshow', function(e){ if(e.persisted) location.reload(); });
+    fetch('/api/teacher/me', { credentials: 'same-origin' }).then(function(res){
+        if(res.ok){ document.documentElement.style.visibility = ''; }
+        else { window.location.replace('admin portal.html'); }
+    }).catch(function(){ window.location.replace('admin portal.html'); });
+})();
+</script>
+
+<!-- ===== TOP BAR ===== -->
+<div class="topbar">
+    <button id="mobileMenuBtn" class="mobile-menu-btn" aria-label="Menu"><i class="fas fa-bars"></i></button>
+    <h2>Smart Evaluation System</h2>
+    <div class="icons">
+        <button class="icon-btn"><i class="fas fa-user-circle"></i></button>
+        <span id="user-name" style="font-weight:600; color:#fff;">Dr. Kumar</span>
+    </div>
+</div>
+
+<div class="sidebar" id="sidebar">
+    <span class="sidebar-label" style="font-weight:600; font-size:16px;">MENU</span>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a class="active" onclick="showPage('dashboard',this)"><i class="fas fa-home"></i><span class="sidebar-label"> Dashboard</span></a>
+        <a onclick="showPage('students',this)"><i class="fas fa-users"></i><span class="sidebar-label"> Students</span></a>
+        <a onclick="showPage('exams',this)"><i class="fas fa-file-alt"></i><span class="sidebar-label"> Exams</span></a>
+         <a onclick="showPage('settings',this)"><i class="fas fa-cog"></i><span class="sidebar-label"> Settings</span></a>
+        <a onclick="logout()" style="color:#ff6b6b;"><i class="fas fa-sign-out-alt"></i><span class="sidebar-label"> Logout</span></a>
+    </div>
+</div>
+
+<div class="container">
+
+<!-- ===== MAIN CONTENT ===== -->
+<div class="main">
+
+<!-- ===== DASHBOARD ===== -->
+<div id="dashboard" class="section active">
+    <div class="welcome-banner">
+        <div class="banner-content">
+            <div class="welcome-section">
+                <div class="welcome-text">Welcome back, <span id="welcome-name"></span></div>
+                <p class="welcome-subtitle">Always motivated & ready to give better result</p>
+            </div>
+
+            <div class="profile-pic-section">
+                <div class="profile-avatar" id="profile-avatar" title="Click to upload profile picture">
+                    <i class="fas fa-user"></i>
+                </div>
+                <input type="file" id="profile-upload" accept="image/*" style="display:none;">
+            </div>
+        </div>
+    </div>
+
+    <div class="cards-section">
+        <div style="padding:0; margin:0;">
+            <h3 style="color:#5a0f1b; margin-bottom:15px;">Teacher Profile</h3>
+            <p><b>Name:</b> <span id="dash-name"></span></p><br>
+<p><b>Department:</b> <span id="dash-department"></span></p><br>
+<p><b>Phone:</b> <span id="dash-phone"></span></p><br>
+<p><b>Role:</b> <span id="dash-role"></span></p><br>
+        </div>
+    </div>
+
+   
+</div>
+<!-- SETTINGS SECTION -->
+<div id="settings" class="section">
+    <div class="section-title">Settings & Profile</div>
+    <div class="card">
+        <h3 style="color:#5a0f1b; margin-bottom:20px;">Edit Your Profile</h3>
+        <form>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px;">
+                <div>
+                    <label style="display:block; margin-bottom:5px; font-weight:600; color:#333;">Full Name</label>
+                    <input id="settings-name" type="text" value="" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;">
+                </div>
+                <div>
+                    <label style="display:block; margin-bottom:5px; font-weight:600; color:#333;">Teacher ID</label>
+                    <input id="settings-username" type="text" value="" pattern="[a-z]+" title="Only lowercase letters (a-z) allowed" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;">
+                </div>
+                
+                
+                <div>
+                    <label style="display:block; margin-bottom:5px; font-weight:600; color:#333;">Email ID</label>
+                    <input id="settings-email" type="email" value="" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;">
+                </div>
+                <div>
+                    <label style="display:block; margin-bottom:5px; font-weight:600; color:#333;">Department</label>
+                    <select id="settings-department" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;">
+                        <option value="" selected disabled>Select Department</option>
+                        <option value="CSA">CSA</option>
+                        <option value="CSB">CSB</option>
+                        <option value="CYBER">CYBER</option>
+                        <option value="AIDS">AIDS</option>
+                        <option value="AI">AI</option>
+                        <option value="MECH">MECH</option>
+                        <option value="CIVIL">CIVIL</option>
+                        <option value="EEE">EEE</option>
+                        <option value="EC">EC</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display:block; margin-bottom:5px; font-weight:600; color:#333;">Phone Number</label>
+                    <input id="settings-phone" type="tel" placeholder="Enter your phone number" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;">
+                </div>
+            </div>
+            <button type="button" onclick="saveSettings()" style="background:#5a0f1b; color:white; padding:10px 25px; border:none; border-radius:8px; cursor:pointer; font-weight:600;">Save Changes</button>
+        </form>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+        <h3 style="color:#5a0f1b; margin-bottom:20px;">Change Password</h3>
+        <form>
+            <div>
+                <label style="display:block; margin-bottom:5px; font-weight:600; color:#333;">Current Password</label>
+                <input id="settings-current-password" type="password" placeholder="Enter current password" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; margin-bottom:15px;">
+            </div>
+            <div>
+                <label style="display:block; margin-bottom:5px; font-weight:600; color:#333;">New Password</label>
+                <input id="settings-new-password" type="password" placeholder="Enter new password" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; margin-bottom:15px;">
+            </div>
+            <div>
+                <label style="display:block; margin-bottom:5px; font-weight:600; color:#333;">Confirm Password</label>
+                <input id="settings-confirm-password" type="password" placeholder="Confirm new password" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; margin-bottom:15px;">
+            </div>
+            <button type="button" onclick="changePassword()" style="background:#5a0f1b; color:white; padding:10px 25px; border:none; border-radius:8px; cursor:pointer; font-weight:600;">Update Password</button>
+        </form>
+    </div>
+</div>
+
+</div>
+</div>
+
+<script>
+function setupMobileSidebar(){
+    const btn = document.getElementById('mobileMenuBtn');
+    const sidebar = document.getElementById('sidebar');
+    if(!btn || !sidebar) return;
+    btn.addEventListener('click', function(){
+        const open = sidebar.classList.toggle('open');
+        document.body.style.overflow = open ? 'hidden' : '';
+    });
+    sidebar.addEventListener('click', function(e){
+        if(e.target.closest('a')){
+            sidebar.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+    });
+    document.addEventListener('keydown', function(e){
+        if(e.key === 'Escape'){
+            sidebar.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+    });
+}
+document.addEventListener('DOMContentLoaded', setupMobileSidebar);
+</script>
+
+
+<!-- STUDENTS -->
+<div id="students" class="section">
+    <div class="section-title">Students List</div>
+
+    <!-- NEW HEADING -->
+    <h3 id="studentHeading">Registered Students</h3>
+
+    <div class="card">
+        <table>
+            <thead>
+                <tr>
+                    <th>Roll Number</th>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Semester</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+    
+</div>
+
+<!-- EXAMS -->
+<div id="exams" class="section">
+    <div class="section-title">Exams Management</div>
+    
+    <!-- TAB NAVIGATION -->
+    <div class="exam-tabs" style="margin-bottom:20px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button onclick="switchExamTab('view')" class="exam-tab-btn active" id="tab-view">View Exams</button>
+        <button onclick="switchExamTab('create')" class="exam-tab-btn" id="tab-create">Create Exam</button>
+        <button onclick="switchExamTab('report')" class="exam-tab-btn" id="tab-report">Exam Report</button>
+    </div>
+
+    <!-- VIEW EXAMS TAB -->
+    <div id="exam-view" class="exam-tab-content active">
+        <div class="card">
+            <h3 style="color:#5a0f1b; margin-bottom:15px;">All Exams</h3>
+            <p style="background:#e8f4f8; padding:12px; border-radius:6px; border-left:4px solid #0066cc; margin-bottom:15px; font-size:13px;">
+                <b>📌 Note:</b> <span style="color:#333;">After creating an exam and setting questions + schedule, activation happens automatically at start time and deactivation at end time.</span>
+            </p>
+            <div id="examsListContainer">
+                <!-- Exams will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- CREATE EXAM TAB -->
+    <div id="exam-create" class="exam-tab-content">
+        <div class="card">
+            <h3 style="color:#5a0f1b; margin-bottom:20px;">Create New Exam</h3>
+            <form id="createExamForm" style="display:flex; flex-direction:column; gap:20px;">
+                
+                <!-- Exam Name -->
+                <div>
+                    <label style="display:block; margin-bottom:8px; font-weight:600; color:#333;">Exam Name <span style="color:#ff6b6b;">*</span></label>
+                    <input type="text" id="examName" placeholder="Enter exam name" required style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:14px;">
+                </div>
+
+                <!-- Select Students -->
+                <!-- Filters: Batch (email prefix) + Department -->
+<div style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:10px; align-items:flex-start; position:relative;">
+    <div style="flex:1; min-width:220px; position:relative;">
+        <label style="font-weight:600;">Filter by Batch:</label><br>
+        <select id="batchFilter" multiple size="4" onchange="filterStudents()" class="mobile-only" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px; margin-top:4px; min-height:120px;">
+            <option value="all" selected>All Batches</option>
+        </select>
+        <div class="desktop-only" style="margin-top:6px;">
+            <button type="button" onclick="togglePicker('batch')" style="padding:8px 12px; border-radius:6px; border:1px solid #ddd; background:#fff; cursor:pointer;">Choose Batches</button>
+            <div id="batchPicker" class="picker-popover desktop-only" style="display:none; left:0; top:44px;">
+                <div id="batchPickerList"></div>
+                <div style="text-align:right; margin-top:8px;"><button type="button" onclick="applyPickers()" style="padding:8px 12px; border-radius:6px; background:#5a0f1b; color:#fff; border:none;">Select</button></div>
+            </div>
+        </div>
+        <small style="display:block; margin-top:6px; color:#777;">Use Ctrl/Cmd or touch selections to pick multiple batches.</small>
+    </div>
+    <div style="flex:1; min-width:220px; position:relative;">
+        <label style="font-weight:600;">Filter by Section / Department:</label><br>
+        <select id="departmentFilter" multiple size="4" onchange="filterStudents()" class="mobile-only" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px; margin-top:4px; min-height:120px;">
+            <option value="all" selected>All Sections</option>
+        </select>
+        <div class="desktop-only" style="margin-top:6px;">
+            <button type="button" onclick="togglePicker('department')" style="padding:8px 12px; border-radius:6px; border:1px solid #ddd; background:#fff; cursor:pointer;">Choose Sections</button>
+            <div id="departmentPicker" class="picker-popover desktop-only" style="display:none; left:0; top:44px;">
+                <div id="departmentPickerList"></div>
+                <div style="text-align:right; margin-top:8px;"><button type="button" onclick="applyPickers()" style="padding:8px 12px; border-radius:6px; background:#5a0f1b; color:#fff; border:none;">Select</button></div>
+            </div>
+        </div>
+        <small style="display:block; margin-top:6px; color:#777;">Pick one or more sections; leaving “All” selected shows every section.</small>
+    </div>
+</div>
+
+<!-- Student checkboxes container -->
+<div style="border:1px solid #ddd; border-radius:8px; padding:15px; background:#f9f9f9; max-height:250px; overflow-y:auto;">
+    <div style="margin-bottom:10px;">
+        <input type="checkbox" id="selectAllStudents" onchange="toggleAllStudents()">
+        <label for="selectAllStudents" style="margin-left:8px; font-weight:600; cursor:pointer;">Select All Students</label>
+    </div>
+    <hr style="margin-bottom:10px;">
+    <div id="studentCheckboxes">
+        <!-- Students will be populated dynamically -->
+    </div>
+</div>
+<p id="selectedCount" style="margin-top:8px; color:#666; font-size:13px;">0 students selected</p>
+
+                <p style="background:#fff8e1; padding:12px; border-radius:6px; border-left:4px solid #f39c12; margin:0; font-size:13px; color:#333;">
+                    <b>📌 Next step:</b> Start time, end time, and individual exam duration will be set on the question setup page.
+                </p>
+
+                
+
+                <!-- Submit Button -->
+                <button type="button" id="createExamBtn" onclick="createExam()" disabled style="background:#5a0f1b; color:white; padding:12px 25px; border:none; border-radius:8px; cursor:pointer; font-weight:600; align-self:flex-start;">Create Exam</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- EXAM REPORT TAB -->
+    <div id="exam-report" class="exam-tab-content">
+        <div class="card">
+            <h3 style="color:#5a0f1b; margin-bottom:15px;">View Exam Report</h3>
+            <select id="examReportSelect" onchange="loadExamReport()" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; margin-bottom:20px; font-size:14px;">
+                <option value="">-- Select an exam --</option>
+            </select>
+
+            <!-- Report Content -->
+            <div id="reportContent" style="display:none;">
+                <h4 style="color:#5a0f1b; margin-bottom:15px; border-bottom:2px solid #5a0f1b; padding-bottom:10px;">Student Marks</h4>
+                
+                <div id="reportStudentList" style="display:flex; flex-direction:column; gap:12px;">
+                    <!-- Student cards will be populated here -->
+                </div>
+
+                <!-- Student Answer Details -->
+                <div id="answerDetails" style="display:none; margin-top:20px; padding:20px; background:#f9f9f9; border-radius:8px; border-left:4px solid #5a0f1b;">
+                    <button onclick="closeAnswerDetails()" style="background:#999; color:white; padding:8px 15px; margin-bottom:15px; border:none; border-radius:5px; cursor:pointer; font-weight:600;">← Back</button>
+                    
+                    <h4 style="color:#5a0f1b; margin-bottom:10px;">Student: <span id="answerStudentName"></span></h4>
+                    <p style="margin-bottom:15px; color:#666;"><b>Score:</b> <span id="answerStudentScore"></span></p>
+                    
+                    <div id="answersContainer" style="display:flex; flex-direction:column; gap:15px;">
+                        <!-- Question answers will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+
+</div>
+</div>
+
+<footer>© Smart Evaluation System</footer>
+
+<script>
+let examsData = [];
+let allStudents = [];
+let selectedStudents = new Set();
+let departmentsPopulated = false; // to ensure dropdown is populated only once
+
+// Validation: enable create button only when form is complete
+function updateCreateBtnState(){
+    const examName = document.getElementById('examName')?.value.trim();
+    const hasStudents = selectedStudents.size > 0;
+    const valid = examName && hasStudents;
+    const btn = document.getElementById('createExamBtn');
+    if(btn) btn.disabled = !valid;
+}
+
+// Load students filtered by batch (email prefix) and/or department
+async function loadStudents(department='all', batch='all') {
+    try {
+        const params = new URLSearchParams();
+        const departments = Array.isArray(department) ? department : [department];
+        const batches = Array.isArray(batch) ? batch : [batch];
+        departments.filter(Boolean).forEach(value => params.append('department', value));
+        batches.filter(Boolean).forEach(value => params.append('batch', value));
+        const res = await fetch(`/api/teacher/students_for_exam?${params.toString()}`);
+        const data = await res.json();
+        allStudents = data.students || [];
+        renderStudentCheckboxes();
+
+        // populate filter dropdowns only once (on initial load)
+        if (!departmentsPopulated) {
+            populateFilters();
+            departmentsPopulated = true;
+        }
+    } catch (err) {
+        console.error("Failed to load students:", err);
+    }
+}
+
+// Render student checkboxes
+function renderStudentCheckboxes() {
+    const container = document.getElementById('studentCheckboxes');
+    container.innerHTML = '';
+
+    if(allStudents.length === 0){
+        container.innerHTML = '<p style="color:#999; font-size:13px;">No students match the selected filters.</p>';
+        updateSelectedCount();
+        updateCreateBtnState();
+        return;
+    }
+
+    allStudents.forEach(student => {
+        const div = document.createElement('div');
+        div.style.marginBottom = '5px';
+        const groupLabel = student.email_prefix ? `[${student.email_prefix.toUpperCase()}-${student.department || ''}]` : '';
+        div.innerHTML = `
+            <input class="student-checkbox" data-name="${student.name}" data-roll="${student.roll_number}" type="checkbox" id="student_${student.roll_number}" value="${student.roll_number}" onchange="toggleStudent('${student.roll_number}')" ${selectedStudents.has(student.roll_number) ? 'checked' : ''}>
+            <label for="student_${student.roll_number}" style="margin-left:8px; cursor:pointer;">${student.name} (${student.roll_number}) <span style="color:#888; font-size:12px;">${groupLabel}</span></label>
+        `;
+        container.appendChild(div);
+    });
+
+    // Reset Select All checkbox
+    const allCheckbox = document.getElementById('selectAllStudents');
+    if (allCheckbox) {
+        allCheckbox.checked = allStudents.every(s => selectedStudents.has(s.roll_number)) && allStudents.length > 0;
+    }
+
+    updateSelectedCount();
+    updateCreateBtnState();
+}
+
+// Toggle individual student
+function toggleStudent(rollNumber) {
+    const checkbox = document.getElementById(`student_${rollNumber}`);
+    if (checkbox.checked) selectedStudents.add(rollNumber);
+    else selectedStudents.delete(rollNumber);
+
+    // Update Select All checkbox
+    const allCheckbox = document.getElementById('selectAllStudents');
+    if (allCheckbox) {
+        allCheckbox.checked = allStudents.every(s => selectedStudents.has(s.roll_number)) && allStudents.length > 0;
+    }
+
+    updateSelectedCount();
+    updateCreateBtnState();
+}
+
+// Toggle all students
+function toggleAllStudents() {
+    const checked = document.getElementById('selectAllStudents').checked;
+    allStudents.forEach(s => {
+        const cb = document.getElementById(`student_${s.roll_number}`);
+        if (cb) {
+            cb.checked = checked;
+            if (checked) selectedStudents.add(s.roll_number);
+            else selectedStudents.delete(s.roll_number);
+        }
+    });
+    updateSelectedCount();
+    updateCreateBtnState();
+}
+
+// Filter students by batch (email prefix) and department
+function filterStudents() {
+    const dept  = getSelectedValues('departmentFilter');
+    const batch = getSelectedValues('batchFilter');
+    loadStudents(dept, batch);
+}
+
+function getSelectedValues(selectId) {
+    const select = document.getElementById(selectId);
+    if (!select) return ['all'];
+    const values = Array.from(select.selectedOptions).map(option => option.value).filter(Boolean);
+    if (values.length === 0 || values.includes('all')) return ['all'];
+    return values;
+}
+
+// Desktop picker helpers
+function buildDesktopPickers(){
+    buildPickerFromSelect('batchFilter','batchPickerList');
+    buildPickerFromSelect('departmentFilter','departmentPickerList');
+}
+
+function buildPickerFromSelect(selectId, listId){
+    const sel = document.getElementById(selectId);
+    const list = document.getElementById(listId);
+    if(!sel || !list) return;
+    list.innerHTML = '';
+    Array.from(sel.options).forEach(opt => {
+        const val = opt.value;
+        const label = opt.textContent || opt.innerText || val;
+        const id = `${listId}_${val}`;
+        list.insertAdjacentHTML('beforeend', `<div style="padding:6px;"><label style="cursor:pointer;"><input type="checkbox" value="${val}" id="${id}" ${opt.selected ? 'checked' : ''}> ${label}</label></div>`);
+    });
+}
+
+function togglePicker(type){
+    const el = document.getElementById(type + 'Picker');
+    if(!el) return;
+    el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none';
+}
+
+function getPickerValues(listId){
+    const list = document.getElementById(listId);
+    if(!list) return ['all'];
+    const checked = Array.from(list.querySelectorAll('input[type=checkbox]:checked')).map(i=>i.value).filter(Boolean);
+    if(checked.length === 0 || checked.includes('all')) return ['all'];
+    return checked;
+}
+
+function applyPickers(){
+    const batchVals = getPickerValues('batchPickerList');
+    const deptVals = getPickerValues('departmentPickerList');
+    loadStudents(deptVals, batchVals);
+    // close popovers
+    const b = document.getElementById('batchPicker'); if(b) b.style.display='none';
+    const d = document.getElementById('departmentPicker'); if(d) d.style.display='none';
+}
+
+// Update selected count display
+function updateSelectedCount() {
+    document.getElementById('selectedCount').innerText = `${selectedStudents.size} students selected`;
+}
+
+// Populate both batch and department filter dropdowns from full student list
+async function populateFilters() {
+    // Fetch all students once (no filter) to populate dropdowns
+    try {
+        const res = await fetch('/api/teacher/students_for_exam?department=all&batch=all');
+        const data = await res.json();
+        const all = data.students || [];
+
+        // Batch filter - unique email prefixes
+        const batchFilter = document.getElementById('batchFilter');
+        const batches = [...new Set(all.map(s => s.email_prefix).filter(Boolean))].sort();
+        batchFilter.innerHTML = `<option value="all">All Batches</option>` +
+            batches.map(b => `<option value="${b}">${b.toUpperCase()}</option>`).join('');
+
+        // Department filter - unique departments
+        const deptFilter = document.getElementById('departmentFilter');
+        const depts = [...new Set(all.map(s => s.department).filter(Boolean))].sort();
+        deptFilter.innerHTML = `<option value="all">All Sections</option>` +
+            depts.map(d => `<option value="${d}">${d}</option>`).join('');
+
+        // also build desktop pickers (checkbox popovers)
+        buildDesktopPickers();
+    } catch(err) {
+        console.error('Failed to populate filters:', err);
+    }
+}
+
+// Initial load
+loadStudents();
+
+// ensure validation state is kept up-to-date when user interacts
+window.addEventListener('DOMContentLoaded', function(){
+    ['examName'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.addEventListener('input', updateCreateBtnState);
+    });
+    // student toggles already call updateCreateBtnState from toggleStudent/toggleAllStudents
+    updateCreateBtnState();
+});
+
+// database-backed exam list is loaded via API
+
+function showPage(pageId, element){
+    document.querySelectorAll('.section').forEach(sec => {
+        sec.classList.remove('active');
+    });
+    document.getElementById(pageId).classList.add('active');
+
+    if(element){
+        document.querySelectorAll('.sidebar a').forEach(a => {
+            a.classList.remove('active');
+        });
+        element.classList.add('active');
+    }
+    
+    // When switching to exams page, update the list (which will also check for auto-activation)
+    if(pageId === 'exams'){
+        console.log('📋 Teacher navigated to Exams section - updating exam list');
+        setTimeout(() => updateExamsList(), 100);
+    }
+}
+
+// EXAM TAB SWITCHING
+function switchExamTab(tab){
+    // Hide all tabs
+    document.querySelectorAll('.exam-tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.exam-tab-btn').forEach(b => b.classList.remove('active'));
+    
+    // Show selected tab
+    document.getElementById('exam-' + tab).classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+    
+    // Refresh exam list and check for auto-activation when viewing exams
+    if(tab === 'view'){
+        console.log('👀 User switched to View Exams tab - checking for auto-activation');
+        updateExamsList();
+    }
+    
+    // Refresh exam dropdown when switching to report tab
+    if(tab === 'report'){
+        populateExamDropdown();
+    }
+}
+
+// (Duplicate selection helpers removed; original versions above handle checkbox state and selectedStudents set.)
+
+async function fetchTeacherExams(){
+    const res = await fetch('/api/teacher/exams', { credentials: 'same-origin' });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.message || 'Failed to load exams');
+    examsData = data.exams || [];
+    return examsData;
+}
+
+async function createExam(){
+    const examName = document.getElementById('examName').value.trim();
+    const studentRolls = Array.from(document.querySelectorAll('.student-checkbox:checked')).map(cb => cb.value);
+
+    if(!examName || studentRolls.length === 0){
+        alert('Please enter exam name and select students');
+        return;
+    }
+
+    try{
+        const res = await fetch('/api/teacher/exams', {
+            method:'POST',
+            credentials:'same-origin',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({
+                name: examName,
+                student_roll_numbers: studentRolls
+            })
+        });
+        const data = await res.json();
+        if(!res.ok){ alert(data.message || 'Create exam failed'); return; }
+
+        document.getElementById('createExamForm').reset();
+        selectedStudents.clear();
+        document.getElementById('selectAllStudents').checked = false;
+        updateSelectedCount();
+        await updateExamsList();
+        await populateExamDropdown();
+        alert('✓ Exam created successfully! Opening question setup...');
+        window.location.href = 'exam.html?examId=' + data.exam.id;
+    }catch(err){
+        console.error(err);
+        alert('Create exam failed');
+    }
+}
+
+async function updateExamsList(){
+    await fetchTeacherExams();
+    const container = document.getElementById('examsListContainer');
+    if(examsData.length === 0){
+        container.innerHTML = '<p style="color:#666; padding:20px;">No exams created yet.</p>';
+        return;
+    }
+    const now = new Date();
+    let html = '';
+    examsData.forEach(exam => {
+        const hasSchedule = Boolean(exam.startTime && exam.endTime && exam.duration);
+        const start = hasSchedule ? new Date(exam.startTime) : null;
+        const end = hasSchedule ? new Date(exam.endTime) : null;
+        const beforeStart = hasSchedule ? now < start : false;
+        const afterEnd = hasSchedule ? now > end : false;
+        const status = !hasSchedule ? 'Draft (schedule pending)' : (exam.active ? 'Active' : (afterEnd ? 'Expired' : 'Inactive'));
+        html += `
+            <div style="padding:15px; margin-bottom:12px; background:${exam.active ? '#f0fdf4' : '#f9f9f9'}; border-radius:8px; border-left:4px solid ${exam.active ? '#27ae60' : '#999'}; display:flex; justify-content:space-between; align-items:center;">
+                <div style="flex:1;">
+                    <p style="margin:0; color:#333; font-weight:600;">${exam.name}</p>
+                    <p style="margin:5px 0 0 0; color:#666; font-size:13px;">${hasSchedule ? `Start: ${start.toLocaleString()} | End: ${end.toLocaleString()} | Duration: ${exam.duration} mins` : 'Schedule: Not set yet'}</p>
+                    <p style="margin:5px 0 0 0; color:#666; font-size:12px;">Status: ${status}</p>
+                </div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+                    ${!hasSchedule ? `<button onclick="window.location.href='exam.html?examId=${exam.id}'" style="background:#2980b9;color:#fff;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;">Set Questions & Schedule</button>` : ''}
+                    ${(hasSchedule && !afterEnd) ? `<button onclick="window.location.href='exam.html?examId=${exam.id}'" style="background:#2980b9;color:#fff;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;">Edit Questions & Schedule</button>` : ''}
+                    ${(hasSchedule && !beforeStart && !afterEnd) ? `<button onclick="extendOngoingExamEndTime(${exam.id})" style="background:#8e44ad;color:#fff;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;">Extend End</button>` : ''}
+                    ${(hasSchedule && beforeStart) ? `<button onclick="editNonStartedExamSchedule(${exam.id})" style="background:#2980b9;color:#fff;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;">Edit Schedule</button>` : ''}
+                    <button onclick="deleteExam(${exam.id})" style="background:#ff6b6b;color:#fff;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;">Delete</button>
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+async function deleteExam(examId){
+    if(!confirm('Are you sure you want to delete this exam?')) return;
+    const res = await fetch(`/api/teacher/exams/${examId}`, {method:'DELETE', credentials:'same-origin'});
+    const data = await res.json();
+    if(!res.ok){ alert(data.message || 'Delete failed'); return; }
+    await updateExamsList();
+    await populateExamDropdown();
+}
+
+async function activateExam(examId){
+    const res = await fetch(`/api/teacher/exams/${examId}/activate`, {method:'POST', credentials:'same-origin'});
+    const data = await res.json();
+    if(!res.ok){ alert(data.message || 'Activate failed'); return; }
+    await updateExamsList();
+    await populateExamDropdown();
+}
+
+async function deactivateExam(examId){
+    const res = await fetch(`/api/teacher/exams/${examId}/deactivate`, {method:'POST', credentials:'same-origin'});
+    const data = await res.json();
+    if(!res.ok){ alert(data.message || 'Deactivate failed'); return; }
+    await updateExamsList();
+    await populateExamDropdown();
+}
+
+async function extendOngoingExamEndTime(examId){
+    const exam = examsData.find(e => e.id === examId);
+    if(!exam) return;
+    const now = new Date();
+    const start = new Date(exam.startTime);
+    const end = new Date(exam.endTime);
+    if(now < start){
+        alert('Exam has not started yet. Extension is only allowed while exam is ongoing.');
+        return;
+    }
+    if(now >= end){
+        alert('Exam already ended. End time cannot be extended now.');
+        return;
+    }
+    const newEndInput = prompt('Enter NEW end time (YYYY-MM-DDTHH:MM)', exam.endTime);
+    if(!newEndInput) return;
+    const res = await fetch(`/api/teacher/exams/${examId}/extend`, {
+        method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({endTime:newEndInput})
+    });
+    const data = await res.json();
+    if(!res.ok){ alert(data.message || 'Extend failed'); return; }
+    await updateExamsList();
+    await populateExamDropdown();
+}
+
+async function editNonStartedExamSchedule(examId){
+    const exam = examsData.find(e => e.id === examId);
+    if(!exam) return;
+    const newStart = prompt('Enter NEW start time (YYYY-MM-DDTHH:MM)', exam.startTime);
+    if(!newStart) return;
+    const newEnd = prompt('Enter NEW end time (YYYY-MM-DDTHH:MM)', exam.endTime);
+    if(!newEnd) return;
+    const res = await fetch(`/api/teacher/exams/${examId}/schedule`, {
+        method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({startTime:newStart, endTime:newEnd})
+    });
+    const data = await res.json();
+    if(!res.ok){ alert(data.message || 'Schedule update failed'); return; }
+    await updateExamsList();
+    await populateExamDropdown();
+}
+
+let currentReportRows = [];
+async function loadExamReport(){
+    const examId = document.getElementById('examReportSelect').value;
+    if(!examId){
+        document.getElementById('reportContent').style.display = 'none';
+        return;
+    }
+    const res = await fetch(`/api/teacher/exams/${examId}/report`, { credentials:'same-origin' });
+    const data = await res.json();
+    if(!res.ok){ alert(data.message || 'Failed to load report'); return; }
+
+    currentReportRows = data.rows || [];
+    let html = '';
+    currentReportRows.forEach(row => {
+        if(!row.submitted){
+            if(row.missed){
+                html += `<div style="padding:15px; background:#fef2f2; border-radius:8px; border-left:4px solid #ff6b6b; margin-bottom:10px;"><p style="margin:0; font-weight:600;">${row.student_name} (${row.student_roll})</p><p style="margin:5px 0 0; color:#ff6b6b; font-weight:700;">❌ Missed</p></div>`;
+            } else {
+                html += `<div style="padding:15px; background:#fff3cd; border-radius:8px; border-left:4px solid #ff9800; margin-bottom:10px;"><p style="margin:0; font-weight:600;">${row.student_name} (${row.student_roll})</p><p style="margin:5px 0 0; color:#ff9800; font-weight:700;">⚠️ Not Attempted</p></div>`;
+            }
+        } else {
+            const pct = row.total_questions > 0 ? Math.round((row.score / row.total_questions) * 100) : 0;
+            html += `<div style="padding:15px; background:#f0fdf4; border-radius:8px; border-left:4px solid #27ae60; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;"><div><p style="margin:0; font-weight:600;">${row.student_name} (${row.student_roll})</p><p style="margin:5px 0 0;">Score: <b>${row.score}/${row.total_questions}</b> (${pct}%)</p></div><button onclick="viewStudentAnswers('${row.student_roll}')" style="background:#5a0f1b;color:#fff;padding:8px 15px;border:none;border-radius:6px;cursor:pointer;">View Details</button></div>`;
+        }
+    });
+    document.getElementById('reportStudentList').innerHTML = html;
+    document.getElementById('reportContent').style.display = 'block';
+    document.getElementById('answerDetails').style.display = 'none';
+}
+
+function viewStudentAnswers(studentRoll){
+    const row = currentReportRows.find(r => String(r.student_roll) === String(studentRoll));
+    if(!row){ alert('Student record not found'); return; }
+    if(row.missed){ alert('Student missed this exam'); return; }
+    if(!row.submitted){ alert('Student has not submitted this exam'); return; }
+    const percentage = row.total_questions > 0 ? Math.round((row.score / row.total_questions) * 100) : 0;
+    document.getElementById('answerStudentName').textContent = row.student_name;
+    document.getElementById('answerStudentScore').textContent = `${row.score} / ${row.total_questions} (${percentage}%) - DONE`;
+
+    let answersHTML = '';
+    (row.questions || []).forEach((question, index) => {
+        const studentAnswer = (row.studentAnswers || [])[index] || '';
+        const correctAnswer = question.teacherAnswer || '';
+        const isCorrect = (row.questionResults || [])[index] === true;
+        const borderColor = isCorrect ? '#27ae60' : '#ff6b6b';
+        const statusSymbol = isCorrect ? '✓ CORRECT' : '✗ WRONG';
+        const statusColor = isCorrect ? '#27ae60' : '#ff6b6b';
+        const bgColor = isCorrect ? '#f0fdf4' : '#fef2f2';
+        const questionType = question.type ? ` [${question.type.toUpperCase()}]` : '';
+        answersHTML += `<div style="padding:15px; background:${bgColor}; border-radius:8px; border-left:4px solid ${borderColor}; margin-bottom:15px;"><p style="margin:0 0 10px 0; font-weight:600;"><b>Q${index + 1}${questionType}:</b> ${question.question}</p><p style="margin:8px 0; color:${statusColor}; font-weight:700;"><b>${statusSymbol}</b></p><p style="margin:8px 0;"><b>Student Answer:</b> ${studentAnswer || '<em style="color:#999;">(Not answered)</em>'}</p><p style="margin:8px 0 0;"><b>Correct Answer:</b> ${correctAnswer}</p></div>`;
+    });
+    document.getElementById('answersContainer').innerHTML = answersHTML;
+    document.getElementById('answerDetails').style.display = 'block';
+    document.getElementById('reportStudentList').style.display = 'none';
+}
+
+function closeAnswerDetails(){
+    document.getElementById('answerDetails').style.display = 'none';
+    document.getElementById('reportStudentList').style.display = 'flex';
+}
+
+async function populateExamDropdown(){
+    await fetchTeacherExams();
+    const select = document.getElementById('examReportSelect');
+    select.innerHTML = '<option value="">-- Select an exam --</option>';
+    examsData.forEach(exam => {
+        const option = document.createElement('option');
+        option.value = exam.id;
+        const dateStr = exam.startTime ? new Date(exam.startTime).toLocaleDateString() : '';
+        option.textContent = `${exam.name} (${dateStr}) ${exam.active ? '🔴 Active' : '⚫ Inactive'}`;
+        select.appendChild(option);
+    });
+}
+
+async function logout(){
+    try{
+        await fetch('/api/teacher/logout',{method:'POST',credentials:'same-origin'});
+    }catch(e){}
+    window.location.href = "admin portal.html";
+}
+
+// Typing animation function (will be called after profile loads)
+function startTypingAnimation(name) {
+    const display = document.getElementById('welcome-name');
+    if(!display) return;
+    
+    let i = 0;
+    function type(){
+        if(i <= name.length){
+            display.textContent = name.slice(0, i);
+            i++;
+            setTimeout(type, 120);
+        } else {
+            setTimeout(()=> erase(), 2000);
+        }
+    }
+    function erase(){
+        if(i >= 0){
+            display.textContent = name.slice(0, i);
+            i--;
+            setTimeout(erase, 50);
+        } else {
+            i = 0;
+            setTimeout(type, 400);
+        }
+    }
+    type();
+}
+document.addEventListener("DOMContentLoaded", function() {
+    loadStudentsFromBackend();
+});
+// Welcome typing animation + Profile picture upload
+(function(){
+    document.addEventListener('DOMContentLoaded', function(){
+        // Update exams list and dropdown on page load
+        updateExamsList();
+        populateExamDropdown();
+        
+        // Profile picture upload handler
+        const profileAvatar = document.getElementById('profile-avatar');
+        const profileUpload = document.getElementById('profile-upload');
+        let currentTeacherPhoto = '';
+        let originalTeacherUsername = '';
+        
+        if(profileAvatar && profileUpload){
+            profileAvatar.addEventListener('click', () => profileUpload.click());
+            profileUpload.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if(file){
+                    const reader = new FileReader();
+                    reader.onload = async (event) => {
+                        const imageData = event.target.result;
+                        currentTeacherPhoto = imageData;
+                        profileAvatar.style.backgroundImage = `url('${imageData}')`;
+                        profileAvatar.classList.add('has-image');
+                        profileAvatar.innerHTML = '';
+                        try{
+                            await fetch('/api/teacher/update', {
+                                method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'},
+                                body: JSON.stringify({photo: imageData})
+                            });
+                        }catch(err){ console.warn('could not upload photo', err); }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        // fetch profile details and populate fields
+        async function loadProfile(){
+            try{
+                const res = await fetch('/api/teacher/me', {credentials:'same-origin'});
+                if(!res.ok) throw new Error('not logged in');
+                const data = await res.json();
+                localStorage.setItem("loggedTeacher", JSON.stringify(data));
+                originalTeacherUsername = data.username || '';
+                document.getElementById('user-name').textContent = data.username;
+                if(data.photo && profileAvatar){
+                    currentTeacherPhoto = data.photo;
+                    profileAvatar.style.backgroundImage = `url('${data.photo}')`;
+                    profileAvatar.classList.add('has-image');
+                    profileAvatar.innerHTML = '';
+                }
+                // Fill settings inputs
+                // Update dashboard profile section
+document.getElementById('dash-name').textContent = data.name || '';
+document.getElementById('dash-department').textContent = (data.department || '').toUpperCase();
+document.getElementById('dash-phone').textContent = data.phone || '';
+document.getElementById('dash-role').textContent = data.role || 'Faculty';
+  document.getElementById('settings-name').value = data.name || '';
+        document.getElementById('settings-username').value = data.username || '';
+    document.getElementById('settings-email').value = data.email || '';
+
+        const departmentSelect = document.getElementById('settings-department');
+        const departmentValue = (data.department || '').toUpperCase();
+        if (departmentSelect) {
+            const hasOption = Array.from(departmentSelect.options).some(opt => opt.value === departmentValue);
+            if (!hasOption && departmentValue) {
+                const customOption = document.createElement('option');
+                customOption.value = departmentValue;
+                customOption.textContent = departmentValue;
+                departmentSelect.appendChild(customOption);
+            }
+            departmentSelect.value = departmentValue;
+        }
+        document.getElementById('settings-phone').value = data.phone || '';                
+                // Start typing animation with the loaded username
+                startTypingAnimation(data.name);
+            }catch(e){
+                // redirect to login if unauthenticated
+                window.location.href = 'admin portal.html';
+            }
+        }
+
+        loadProfile();
+
+        window.saveSettings = async function(){
+            const username = document.getElementById('settings-username').value.trim();
+            const email = document.getElementById('settings-email').value.trim();
+            const phone = document.getElementById('settings-phone').value.trim();
+            const department = document.getElementById('settings-department').value.trim();
+
+            const usernamePattern = /^[a-z]+$/;
+            const emailPattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+            const phonePattern = /^\d{10}$/;
+
+            if(username !== originalTeacherUsername && !usernamePattern.test(username)){
+                alert('Username must contain only lowercase letters (a-z)');
+                return;
+            }
+            if(!emailPattern.test(email) || (email.match(/@/g) || []).length !== 1){
+                alert('Email must be a valid email address');
+                return;
+            }
+            if(!phonePattern.test(phone)){
+                alert('Phone number must be exactly 10 digits');
+                return;
+            }
+            if(!department){
+                alert('Please select a department');
+                return;
+            }
+
+            const payload = {
+                name: document.getElementById('settings-name').value.trim(),
+                username: username,
+                email: email,
+                department: department,
+                phone: phone
+            };
+            try{
+                const res = await fetch('/api/teacher/update',{
+                    method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if(!res.ok){ alert(data.message||'Update failed'); return; }
+                alert('Profile updated');
+                loadProfile();
+            }catch(err){ alert('Error: '+err); }
+        };
+
+        window.changePassword = async function(){
+            const current = document.getElementById('settings-current-password').value;
+            const nw = document.getElementById('settings-new-password').value;
+            const conf = document.getElementById('settings-confirm-password').value;
+            if(nw !== conf){ alert('New passwords do not match'); return; }
+            try{
+                const res = await fetch('/api/teacher/change_password',{
+                    method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({current_password: current, new_password: nw})
+                });
+                const data = await res.json();
+                if(!res.ok){ alert(data.message||'Password change failed'); return; }
+                alert('Password changed');
+                // Clear password fields
+                document.getElementById('settings-current-password').value = '';
+                document.getElementById('settings-new-password').value = '';
+                document.getElementById('settings-confirm-password').value = '';
+            }catch(err){ alert('Error: '+err); }
+        };
+    });
+})();
+async function loadStudentsFromBackend() {
+    try {
+        const response = await fetch('/api/teacher/students');
+        const data = await response.json();
+
+        if (!data.students) {
+            console.error("No students found");
+            return;
+        }
+
+        const tableBody = document.querySelector("#students tbody");
+
+        // Clear existing rows
+        tableBody.innerHTML = "";
+
+        data.students.forEach(student => {
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+                <td>${student.roll_number || ''}</td>
+                <td>${student.name || ''}</td>
+                <td>${student.department || ''}</td>
+                <td>${student.semester || ''}</td>
+                <td>${student.email || ''}</td>
+                <td>${student.phone || ''}</td>
+            `;
+
+            tableBody.appendChild(row);
+        });
+
+    } catch (error) {
+        console.error("Error loading students:", error);
+    }
+}
+
+// PERIODIC AUTO-STATUS REFRESH - runs every 30 seconds
+setInterval(async function(){
+    console.log('🔄 [Auto-Check] Refreshing exam list and status...');
+    if(document.getElementById('examsListContainer')){
+        try {
+            await updateExamsList();
+        } catch (error) {
+            console.error('Auto refresh failed:', error);
+        }
+    }
+}, 30000);
+
+// previously used helper to navigate to exam page; no longer referenced
+// function openExamPage() {
+//     // Optional: validate exam creation fields first
+//     const examName = document.getElementById('examName').value.trim();
+//     if (!examName) {
+//         alert('Please enter an exam name first');
+//         return;
+//     }
+//
+//     // You can create the exam in localStorage here if needed
+//     createExam();  // keeps existing functionality
+//
+//     // Open the exam interface
+//     window.open('exam.html', '_blank'); // opens in new tab
+// }
+
+</script>
+
+</body>
+</html>

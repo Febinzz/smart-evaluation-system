@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Evaluation System - Teacher Exam Setup</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(to right, #ffffff, #ffe5e5);
+        }
+
+        .container {
+            width: 85%;
+            max-width: 1000px;
+            margin: 40px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: #c40000;
+            margin-bottom: 10px;
+        }
+
+        #examInfo {
+            text-align: center;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 25px;
+            padding: 10px;
+            background: #fff5f5;
+            border-left: 5px solid #c40000;
+            border-radius: 6px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0 15px 0;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            outline: none;
+            transition: 0.3s;
+            font-size: 14px;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            border-color: #c40000;
+            box-shadow: 0 0 5px rgba(196, 0, 0, 0.3);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+
+        .btn-primary {
+            background: #c40000;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #990000;
+        }
+
+        .btn-secondary {
+            background: #ffffff;
+            color: #c40000;
+            border: 2px solid #c40000;
+        }
+
+        .btn-secondary:hover {
+            background: #c40000;
+            color: white;
+        }
+
+        .question-box {
+            background: #fffafa;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(196, 0, 0, 0.08);
+            border-left: 6px solid #c40000;
+        }
+
+        .question-box h3 {
+            color: #c40000;
+            margin-bottom: 10px;
+        }
+
+        .button-group {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        /* Responsive adjustments for mobile */
+        @media (max-width: 700px) {
+            .container {
+                width: 95%;
+                margin: 18px auto;
+                padding: 16px;
+            }
+            h2 { font-size: 18px; }
+            #examInfo { font-size: 14px; padding: 8px; }
+            .question-box { padding: 14px; margin: 14px 0; }
+            .question-box h3 { font-size: 16px; }
+            input, textarea, select { font-size: 14px; }
+            .button-group { text-align: stretch; }
+            .btn-primary, .btn-secondary { width: 100%; padding: 12px; display: block; }
+            .exam-back-link { display: none !important; }
+        }
+
+    </style>
+</head>
+
+<body>
+<script>
+// Prevent showing protected content from bfcache/back navigation for teacher exam page.
+(function(){
+    document.documentElement.style.visibility = 'hidden';
+    window.addEventListener('pageshow', function(e){ if(e.persisted) location.reload(); });
+    fetch('/api/teacher/me', { credentials: 'same-origin' }).then(function(res){
+        if(res.ok){ document.documentElement.style.visibility = ''; }
+        else { window.location.replace('admin portal.html'); }
+    }).catch(function(){ window.location.replace('admin portal.html'); });
+})();
+</script>
+
+<div class="container" style="position:relative;">
+    <a href="teach.html" class="exam-back-link" style="position:absolute; top:20px; left:20px; padding:10px 15px; background:#c40000; color:white; text-decoration:none; border-radius:6px; font-size:14px; display:flex; align-items:center; gap:8px; z-index:100; cursor:pointer; transition:0.3s ease;" onmouseover="this.style.background='#990000';" onmouseout="this.style.background='#c40000';" title="Back to teacher dashboard">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+
+    <h2>Smart Evaluation System - Teacher Exam Setup</h2>
+
+    <div id="examInfo"></div>
+
+    <label>Enter Total Number of Questions:</label>
+    <input type="number" id="totalQuestions" min="1" placeholder="Enter number of questions">
+
+    <div class="button-group">
+        <button class="btn-secondary" onclick="generateQuestions()">Generate Questions</button>
+    </div>
+
+    <div id="questionsContainer"></div>
+
+    <div class="question-box">
+        <h3>Exam Schedule</h3>
+        <label>Exam Start Time:</label>
+        <input type="datetime-local" id="examStartTime" required>
+
+        <label>Exam End Time:</label>
+        <input type="datetime-local" id="examEndTime" required>
+
+        <label>Individual Duration (minutes):</label>
+        <input type="number" id="examDuration" min="1" placeholder="e.g., 20" required>
+    </div>
+
+    <div class="button-group">
+        <button class="btn-primary" id="setExamBtn">Set Exam</button>
+    </div>
+
+</div>
+
+<script>
+let examData = {
+    id: null,
+    name: null,
+    startTime: null,
+    endTime: null,
+    duration: null,
+    questions: [],
+    students: []
+};
+
+// helper to parse query parameters
+function getQueryParam(name) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name);
+}
+
+function toDatetimeLocalValue(value) {
+    if (!value) return '';
+    const dt = new Date(value);
+    if (Number.isNaN(dt.getTime())) return '';
+    const local = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 16);
+}
+
+function escapeHtml(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+    const examId = getQueryParam('examId');
+    if (!examId) {
+        alert('Exam ID missing. Please create exam from teacher dashboard.');
+        window.location.href = 'teach.html';
+        return;
+    }
+    try {
+        const res = await fetch('/api/teacher/exams', { credentials: 'same-origin' });
+        const data = await res.json();
+        if (!res.ok) {
+            alert(data.message || 'Failed to load exam');
+            return;
+        }
+        const exam = (data.exams || []).find(e => String(e.id) === String(examId));
+        if (!exam) {
+            alert('Exam not found');
+            window.location.href = 'teach.html';
+            return;
+        }
+
+        examData.id = exam.id;
+        examData.name = exam.name;
+        examData.startTime = exam.startTime;
+        examData.endTime = exam.endTime;
+        examData.duration = exam.duration;
+        examData.questions = exam.questions || [];
+        examData.students = exam.students || [];
+
+        document.getElementById('examStartTime').value = toDatetimeLocalValue(examData.startTime);
+        document.getElementById('examEndTime').value = toDatetimeLocalValue(examData.endTime);
+        document.getElementById('examDuration').value = examData.duration || '';
+
+        const infoDiv = document.getElementById('examInfo');
+        infoDiv.textContent = `Exam: ${examData.name} — Students: ${examData.students.length}`;
+
+        if (examData.questions.length > 0) {
+            document.getElementById('totalQuestions').value = examData.questions.length;
+            generateQuestions(examData.questions);
+        }
+    } catch (err) {
+        console.error('Failed to load exam:', err);
+        alert('Failed to load exam');
+    }
+});
+
+function generateQuestions(existingQuestions = null) {
+    const total = document.getElementById("totalQuestions").value;
+    const container = document.getElementById("questionsContainer");
+    container.innerHTML = "";
+    examData.questions = [];
+
+    const existing = Array.isArray(existingQuestions) ? existingQuestions : [];
+
+    for (let i = 1; i <= total; i++) {
+        const current = existing[i - 1] || {};
+        const type = current.type || 'numerical';
+        const question = escapeHtml(current.question || '');
+        const teacherAnswer = escapeHtml(current.teacherAnswer || '');
+
+        container.innerHTML += `
+            <div class="question-box">
+                <h3>Question ${i}</h3>
+
+                <label>Type:</label>
+                <select id="type${i}">
+                    <option value="numerical" ${type === 'numerical' ? 'selected' : ''}>Numerical</option>
+                    <option value="code" ${type === 'code' ? 'selected' : ''}>Code</option>
+                    <option value="direct" ${type === 'direct' ? 'selected' : ''}>Direct Fill</option>
+                    <option value="english" ${type === 'english' ? 'selected' : ''}>English Semantic</option>
+                </select>
+
+                <label>Question:</label>
+                <textarea id="question${i}" placeholder="Enter question here">${question}</textarea>
+
+                <label>Teacher Answer:</label>
+                <textarea id="teacher${i}" placeholder="Enter correct answer">${teacherAnswer}</textarea>
+            </div>
+        `;
+    }
+}
+
+// Set Exam for Students
+document.getElementById("setExamBtn").addEventListener("click", async () => {
+    const total = document.getElementById("totalQuestions").value;
+    if(total < 1){
+        alert("Enter number of questions first!");
+        return;
+    }
+
+    const examStart = document.getElementById('examStartTime').value;
+    const examEnd = document.getElementById('examEndTime').value;
+    const examDuration = parseInt(document.getElementById('examDuration').value, 10);
+
+    if (!examStart || !examEnd || !examDuration) {
+        alert('Please set start time, end time and individual duration.');
+        return;
+    }
+    if (new Date(examEnd) <= new Date(examStart)) {
+        alert('End time must be after start time.');
+        return;
+    }
+    if (examDuration <= 0) {
+        alert('Individual duration must be greater than 0 minutes.');
+        return;
+    }
+
+    let questions = [];
+    for (let i = 1; i <= total; i++) {
+        const q = document.getElementById(`question${i}`).value;
+        const a = document.getElementById(`teacher${i}`).value;
+        const t = document.getElementById(`type${i}`).value;
+
+        if(!q || !a){
+            alert(`Please fill question and teacher answer for Q${i}`);
+            return;
+        }
+
+        // For fill-style and code question types, question must contain blank placeholder(s)
+        // (allow any number of underscores: _, __, ___, ...)
+        if ((t === 'direct' || t === 'english' || t === 'code') && !/_+/.test(q)) {
+            alert(`Q${i}: This is a fill-in-the-blank type question. Question should contain blank space using underscores (_).`);
+            return;
+        }
+
+        questions.push({question: q, teacherAnswer: a, type: t});
+    }
+
+    if(!examData.id){
+        alert('Exam not loaded. Please go back and open again.');
+        return;
+    }
+
+    if(!examData.students || examData.students.length === 0){
+        alert('No students assigned to this exam! Go back and select students.');
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/teacher/exams/${examData.id}/questions`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                questions,
+                startTime: examStart,
+                endTime: examEnd,
+                duration: examDuration
+            })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            alert(data.message || 'Failed to save exam questions');
+            return;
+        }
+        alert('Exam questions updated successfully!');
+        window.location.href = 'teach.html';
+    } catch (err) {
+        console.error('Save exam questions failed:', err);
+        alert('Failed to save exam questions');
+    }
+});
+</script>
+
+</body>
+</html>

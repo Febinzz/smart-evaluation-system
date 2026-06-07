@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Evaluation System | Student Dashboard</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="dashboard.css">
+<style>
+/* Welcome banner styles */
+.welcome-banner{
+    margin:14px 0 20px 0;
+    background:linear-gradient(135deg, #5a0f1b 0%, #7a1f2d 100%);
+    padding:30px;
+    border-radius:16px;
+    color:white;
+    position:relative;
+    overflow:visible;
+    min-height:140px;
+}
+.welcome-text{font-size:32px; font-weight:800; margin-bottom:8px; color:#ffffff}
+.welcome-subtitle{font-size:13px; color:rgba(255,255,255,0.85); font-weight:500; margin-top:6px}
+.cursor{display:inline-block; width:8px; height:1.1em; background:#fff; margin-left:6px; vertical-align:middle; animation:blink 1s steps(2) infinite}
+.banner-content{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    position:relative;
+    z-index:1;
+    gap:30px;
+}
+.welcome-section{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+}
+.profile-pic-section{
+    flex-shrink:0;
+    position:relative;
+}
+.banner-decorative{font-size:60px; animation:float 3s ease-in-out infinite; flex-shrink:0}
+
+/* Profile avatar */
+.donut-chart{
+    width:160px;
+    height:160px;
+    position:relative;
+    flex-shrink:0;
+}
+.profile-avatar{
+    width:140px;
+    height:140px;
+    border-radius:50%;
+    background:#ffffff;
+    border:4px solid #ff6b6b;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:60px;
+    color:#ddd;
+    object-fit:cover;
+    cursor:pointer;
+    transition:all 0.3s;
+}
+.profile-avatar:hover{
+    border-color:#fff;
+    box-shadow:0 0 15px rgba(255,255,255,0.3);
+}
+.profile-avatar.has-image{
+    background-size:cover;
+    background-position:center;
+}
+.donut-stats{
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+    min-width:150px;
+}
+.stat-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+.stat-dot{
+    width:16px;
+    height:16px;
+    border-radius:3px;
+    flex-shrink:0;
+}
+.stat-text{
+    display:flex;
+    flex-direction:column;
+}
+.stat-label{
+    font-size:12px;
+    color:#333;
+    font-weight:500;
+}
+.stat-value{
+    font-size:22px;
+    font-weight:800;
+    color:#000;
+}
+
+.performance-container{
+    display:flex;
+    gap:20px;
+    align-items:flex-start;
+    margin:0 0 25px 0;
+}
+
+.cards-section{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:0;
+    width:100%;
+    background:white;
+    padding:25px;
+    border-radius:16px;
+    margin:0 0 25px 0;
+}
+
+.analysis-card{
+    background:white;
+    color:#000;
+    padding:0 0 0 25px;
+    border-radius:0;
+    display:flex;
+    gap:20px;
+    align-items:center;
+    border-left:1px solid #f0f0f0;
+}
+
+@keyframes blink{50%{opacity:0}}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-12px)}}
+@media(max-width:900px){
+    .welcome-text{font-size:24px}
+    .welcome-subtitle{font-size:12px}
+    .welcome-banner{padding:18px; min-height:auto}
+    .banner-content{flex-direction:column; align-items:center; gap:16px; text-align:center}
+    .welcome-section{width:100%; align-items:center}
+    .profile-pic-section{align-self:center; margin-top:0}
+    .welcome-text, .welcome-subtitle{width:100%; text-align:center}
+    .cards-section{grid-template-columns:1fr; gap:0; padding:25px;}
+    .analysis-card{flex-direction:column; border-left:none; padding:25px 0 0 0;}
+    .donut-chart{width:130px; height:130px}
+    .profile-avatar{width:120px; height:120px; font-size:50px}
+    .stat-value{font-size:20px}
+
+    /* Make results/performance content easier to read on phones */
+    #results .section-title{
+        margin-bottom:12px;
+    }
+    #results .card,
+    #results .result-exam .card{
+        padding:14px;
+    }
+    #results .result-exam .card h3{
+        font-size:18px;
+        margin-bottom:10px;
+    }
+    #results .result-exam .card table{
+        display:block;
+        width:100%;
+        overflow-x:auto;
+        -webkit-overflow-scrolling:touch;
+        font-size:13px;
+    }
+    #results .result-exam .card th,
+    #results .result-exam .card td{
+        white-space:nowrap;
+        padding:10px 8px;
+    }
+    #results .result-exam .card button{
+        padding:6px 10px !important;
+        font-size:13px !important;
+    }
+    #results .result-exam .card > div[style*="background:"]{
+        padding:12px !important;
+        margin-bottom:12px !important;
+    }
+    #results .result-exam .card p{
+        line-height:1.45;
+        font-size:14px;
+    }
+}
+</style>
+</head>
+
+<body>
+<script>
+// Prevent showing protected content from bfcache/back navigation.
+// Hide page until we validate the student session; if invalid, redirect to login.
+(function(){
+    document.documentElement.style.visibility = 'hidden';
+    window.addEventListener('pageshow', function(e){ if(e.persisted) location.reload(); });
+    fetch('/api/student/me', { credentials: 'same-origin' }).then(function(res){
+        if(res.ok){ document.documentElement.style.visibility = ''; }
+        else { window.location.replace('student portal.html'); }
+    }).catch(function(){ window.location.replace('student portal.html'); });
+})();
+</script>
+<div class="topbar">
+    <button id="mobileMenuBtn" class="mobile-menu-btn" aria-label="Menu"><i class="fas fa-bars"></i></button>
+    <h2>Smart Evaluation System</h2>
+    <div class="icons">
+        
+        <button class="icon-btn" title="Profile"><i class="fas fa-user-circle"></i></button>
+        <span id="user-name" style="font-weight:600; color:#fff;">Student</span>
+    </div>
+</div>
+
+<div class="sidebar" id="sidebar">
+    <span class="sidebar-label" style="font-weight:600; font-size:16px;">MENU</span>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a class="active" onclick="showPage('dashboard',this)"><i class="fas fa-home"></i><span class="sidebar-label"> Dashboard</span></a>
+        <a onclick="showPage('exams',this)"><i class="fas fa-file-alt"></i><span class="sidebar-label"> Exams</span></a>
+        <a onclick="showPage('results',this)"><i class="fas fa-chart-bar"></i><span class="sidebar-label"> Results</span></a>
+        <a onclick="showPage('settings',this)"><i class="fas fa-cog"></i><span class="sidebar-label"> Settings</span></a>
+        <a onclick="logout()" style="color:#ff6b6b;"><i class="fas fa-sign-out-alt"></i><span class="sidebar-label"> Logout</span></a>
+    </div>
+</div>
+
+<div class="container">
+
+<!-- ===== MAIN CONTENT ===== -->
+<div class="main">
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="section active">
+   
+
+    <div class="welcome-banner">
+        <div class="banner-content">
+            <div class="welcome-section">
+                <div class="welcome-text">Welcome back, <span id="welcome-name"></span></div>
+                <p class="welcome-subtitle">Always motivated & ready to give better result</p>
+            </div>
+
+            <div class="profile-pic-section">
+                <div class="profile-avatar" id="profile-avatar" title="Click to upload profile picture">
+                    <i class="fas fa-user"></i>
+                </div>
+                <input type="file" id="profile-upload" accept="image/*" style="display:none;">
+            </div>
+        </div>
+    </div>
+
+    <div class="cards-section">
+        <div style="padding:0; margin:0;">
+            <h3 style="color:#5a0f1b; margin-bottom:15px;">Student Profile</h3>
+            <p style="color:#000;"><b>Name:</b> <span id="profile-name">-</span></p><br>
+            <p style="color:#000;"><b>Roll Number</b> <span id="profile-roll">-</span></p><br>
+            <p style="color:#000;"><b>Course:</b> <span id="profile-course">-</span></p><br>
+            <p style="color:#000;"><b>Email:</b> <span id="profile-email">-</span></p><br>
+        </div>
+
+        
+    </div>
+</div>
+
+<!-- EXAMS -->
+<div id="exams" class="section">
+    <div class="section-title">Upcoming Exams</div>
+    <div id="exam-list" class="cards-section" style="display: flex; flex-direction: column; gap: 15px;">
+        <!-- Teacher-set exams will appear here dynamically -->
+    </div>
+</div>
+
+<!-- RESULTS & HISTORY (COMBINED) -->
+<div id="results" class="section">
+    <div class="section-title">Results & Performance</div>
+</div>
+
+<!-- SETTINGS SECTION -->
+<div id="settings" class="section">
+    <div class="section-title">Settings & Profile</div>
+    <div class="card">
+        <h3 style="color:#5a0f1b; margin-bottom:20px;">Edit Your Profile</h3>
+        <form>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px;">
+                <div>
+                    <label style="display:block; margin-bottom:5px; font-weight:600; color:#333;">Full Name</label>
+                    <input id="settings-name" type="text" value="" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;">
+                </div>
+                <div>
+                    <label style="display:block; margin-bottom:5px; font-weight:600; color:#333;">User</label>
+                    <input id="settings-username" type="text" value="" pattern="[a-z]+" title="Only lowercase letters (a-z) allowed" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;">
+                </div>
+                <div>
+                    <label style="display:block; margin-bottom:5px; font-weight:600; color:#333;">Roll Number</Nav></label>
+                    <input id="settings-roll" type="text" value="" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;">
+                </div>
+                <div>
+                    <label style="display:block; margin-bottom:5px; font-weight:600; color:#333;">Email ID</label>
+                    <input id="settings-email" type="email" value="" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;">
+                </div>
+                <div>
+                    <label style="display:block; margin-bottom:5px; font-weight:600; color:#333;">Department</label>
+                    <select id="settings-course" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;">
+                        <option value="" selected disabled>Select Department</option>
+                        <option value="CSA">CSA</option>
+                        <option value="CSB">CSB</option>
+                        <option value="CYBER">CYBER</option>
+                        <option value="AIDS">AIDS</option>
+                        <option value="AI">AI</option>
+                        <option value="MECH">MECH</option>
+                        <option value="CIVIL">CIVIL</option>
+                        <option value="EEE">EEE</option>
+                        <option value="EC">EC</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display:block; margin-bottom:5px; font-weight:600; color:#333;">Phone Number</label>
+                    <input id="settings-phone" type="tel" placeholder="Enter your phone number" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;">
+                </div>
+            </div>
+            <button type="button" onclick="saveSettings()" style="background:#5a0f1b; color:white; padding:10px 25px; border:none; border-radius:8px; cursor:pointer; font-weight:600;">Save Changes</button>
+        </form>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+        <h3 style="color:#5a0f1b; margin-bottom:20px;">Change Password</h3>
+        <form>
+            <div>
+                <label style="display:block; margin-bottom:5px; font-weight:600; color:#333;">Current Password</label>
+                <input id="settings-current-password" type="password" placeholder="Enter current password" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; margin-bottom:15px;">
+            </div>
+            <div>
+                <label style="display:block; margin-bottom:5px; font-weight:600; color:#333;">New Password</label>
+                <input id="settings-new-password" type="password" placeholder="Enter new password" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; margin-bottom:15px;">
+            </div>
+            <div>
+                <label style="display:block; margin-bottom:5px; font-weight:600; color:#333;">Confirm Password</label>
+                <input id="settings-confirm-password" type="password" placeholder="Confirm new password" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; margin-bottom:15px;">
+            </div>
+            <button type="button" onclick="changePassword()" style="background:#5a0f1b; color:white; padding:10px 25px; border:none; border-radius:8px; cursor:pointer; font-weight:600;">Update Password</button>
+        </form>
+    </div>
+</div>
+
+</div>
+</div>
+
+<footer>
+© Smart Evaluation System
+</footer>
+
+<script>
+    let currentStudentId = null; // Global variable to store logged-in student's ID
+    let allLoadedExams = []; // Global array to store combined exams from both sources
+    let examTimerInterval = null; // Timer for exam countdown
+    let currentExamIndex = null; // Track current exam being taken
+    let isExamInProgress = false; // Prevent UI refresh from closing active exam session
+
+    async function enterExamFullscreen() {
+        try {
+            const target = document.documentElement;
+            if (!document.fullscreenElement && target.requestFullscreen) {
+                await target.requestFullscreen();
+            }
+        } catch (err) {
+            console.warn('Fullscreen request failed:', err);
+        }
+    }
+
+    async function exitExamFullscreen() {
+        try {
+            if (document.fullscreenElement && document.exitFullscreen) {
+                await document.exitFullscreen();
+            }
+        } catch (err) {
+            console.warn('Fullscreen exit failed:', err);
+        }
+    }
+
+    function setupMobileSidebar(){
+        const btn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+        if(!btn || !sidebar) return;
+        btn.addEventListener('click', function(){
+            const open = sidebar.classList.toggle('open');
+            document.body.style.overflow = open ? 'hidden' : '';
+        });
+        sidebar.addEventListener('click', function(e){
+            if(e.target.closest('a')){
+                sidebar.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+        });
+        document.addEventListener('keydown', function(e){
+            if(e.key === 'Escape'){
+                sidebar.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', setupMobileSidebar);
+    
+    // legacy localStorage exam functions removed; database-backed versions are defined near the bottom.
+function showPage(pageId, element){
+    document.querySelectorAll('.section').forEach(sec => {
+        sec.classList.remove('active');
+    });
+    document.getElementById(pageId).classList.add('active');
+
+    if(element){
+        document.querySelectorAll('.sidebar a').forEach(a => {
+            a.classList.remove('active');
+        });
+        element.classList.add('active');
+    }
+    
+    // Load results when results page is opened
+    if(pageId === 'results') {
+        loadStudentResults();
+        filterResults('all'); // Show all results by default
+    }
+    
+    // Reload exams when exams page is opened
+    if(pageId === 'exams') {
+        loadStudentExams();
+    }
+}
+
+function viewExamDetails(examId) {
+    // database-backed implementation is defined near the bottom.
+}
+
+function closeExamDetails() {
+    // Reload results to go back to list
+    loadStudentResults();
+    filterResults('all');
+}
+
+function filterResults(exam){
+    if(exam === 'all'){
+        const allResults = document.getElementById('all-results');
+        if(allResults){
+            allResults.classList.remove('hidden');
+        }
+    }
+}
+
+
+function startExamTimer(examIndex, exam) {
+    if (!exam.duration) {
+        console.warn('⚠️ No duration set for exam, auto-submit disabled');
+        return;
+    }
+    
+    // Clear any existing timer
+    if (examTimerInterval) {
+        clearInterval(examTimerInterval);
+    }
+    
+    const endTime = new Date(exam.endTime).getTime();
+    const startTime = Date.now();
+    // compute seconds left by duration and by endTime
+    let remainingSeconds = exam.duration * 60; // base on duration
+    const endRemaining = Math.floor((endTime - startTime) / 1000);
+    if(endRemaining < remainingSeconds){
+        console.log(`⚠️ Adjusting timer: exam endTime occurs before duration expires (${endRemaining} sec left versus ${remainingSeconds})`);
+        remainingSeconds = endRemaining;
+    }
+    
+    console.log(`⏱️ Started exam timer for ${exam.name}: initial remaining ${remainingSeconds} seconds`);
+    
+    const updateTimer = () => {
+        const now = Date.now();
+        const elapsedSeconds = Math.floor((now - startTime) / 1000);
+        remainingSeconds = (exam.duration * 60) - elapsedSeconds;
+        
+        // also check against hard endTime
+        const afterEnd = now > endTime;
+        if (afterEnd) {
+            // exam period ended while student was writing, auto submit answers
+            clearInterval(examTimerInterval);
+            console.log(`⏳ End time reached while writing; auto-submitting exam...`);
+            alert('⏰ Exam end time has passed! Your answers will now be submitted.');
+            autoSubmitExam(examIndex);
+            return;
+        }
+        if (remainingSeconds <= 0) {
+            clearInterval(examTimerInterval);
+            console.log(`⏳ Time's up! Auto-submitting exam...`);
+            alert('⏰ Exam time has ended! Your exam will be automatically submitted.');
+            autoSubmitExam(examIndex);
+            return;
+        }
+        
+        // Update timer display
+        const minutes = Math.floor(remainingSeconds / 60);
+        const seconds = remainingSeconds % 60;
+        const timeDisplay = document.getElementById('timeRemaining');
+        if (timeDisplay) {
+            timeDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            
+            // Change color when time is running out (less than 5 minutes)
+            if (remainingSeconds < 300) {
+                timeDisplay.parentElement.style.background = '#ff6b6b';
+                if (remainingSeconds < 60) {
+                    timeDisplay.parentElement.style.animation = 'pulse 1s infinite';
+                }
+            }
+        }
+    };
+    
+    // Update immediately
+    updateTimer();
+    
+    // Then update every second
+    examTimerInterval = setInterval(updateTimer, 1000);
+}
+
+// Evaluate a single question using the backend API
+async function evaluateQuestion(question, teacherAnswer, studentAnswer, questionType) {
+    try {
+        const response = await fetch('/evaluate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                question: question,
+                teacher_answer: teacherAnswer,
+                student_answer: studentAnswer,
+                type: questionType
+            })
+        });
+        
+        const data = await response.json();
+        return data.correct === true;
+    } catch (error) {
+        console.warn(`⚠️ Evaluation API error for question "${question.substring(0, 50)}...": ${error.message}`);
+        // Fallback to simple string comparison if API fails
+        return studentAnswer.trim().toLowerCase() === teacherAnswer.trim().toLowerCase();
+    }
+}
+
+function escapeHtml(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function formatMultilineText(value) {
+    return escapeHtml(value).replace(/\r?\n/g, '<br>');
+}
+
+function isMobileExamViewport() {
+    return window.matchMedia('(max-width: 900px)').matches;
+}
+
+// legacy localStorage submit handlers removed; database-backed handlers are defined near the bottom.
+async function logout(){
+    try{
+        await fetch('/api/student/logout',{method:'POST',credentials:'same-origin'});
+    }catch(e){}
+    window.location.href = "student portal.html";
+}
+
+// Welcome typing animation + Performance stats + Profile picture
+(function(){
+    document.addEventListener('DOMContentLoaded', function(){
+        // Profile picture upload handler
+        const profileAvatar = document.getElementById('profile-avatar');
+        const profileUpload = document.getElementById('profile-upload');
+        let currentStudentPhoto = '';
+        let originalStudentUsername = '';
+        
+        if(profileAvatar && profileUpload){
+            profileAvatar.addEventListener('click', () => profileUpload.click());
+            profileUpload.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if(file){
+                    const reader = new FileReader();
+                    reader.onload = async (event) => {
+                        const imageData = event.target.result;
+                        currentStudentPhoto = imageData;
+                        profileAvatar.style.backgroundImage = `url('${imageData}')`;
+                        profileAvatar.classList.add('has-image');
+                        profileAvatar.innerHTML = '';
+                        // send to server so it's persisted
+                        try{
+                            await fetch('/api/student/update', {
+                                method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'},
+                                body: JSON.stringify({photo: imageData})
+                            });
+                        }catch(err){ console.warn('could not upload photo', err); }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        // Typing animation function (will be called after profile loads)
+        function startTypingAnimation(name) {
+            const display = document.getElementById('welcome-name');
+            if(!display) return;
+            
+            let i = 0;
+            function type(){
+                if(i <= name.length){
+                    display.textContent = name.slice(0, i);
+                    i++;
+                    setTimeout(type, 120);
+                } else {
+                    setTimeout(()=> erase(), 2000);
+                }
+            }
+            function erase(){
+                if(i >= 0){
+                    display.textContent = name.slice(0, i);
+                    i--;
+                    setTimeout(erase, 50);
+                } else {
+                    i = 0;
+                    setTimeout(type, 400);
+                }
+            }
+            type();
+        }
+
+        // fetch profile details and populate fields
+        async function loadProfile(){
+            try{
+                const res = await fetch('/api/student/me', {credentials:'same-origin'});
+                if(!res.ok) throw new Error('not logged in');
+                const data = await res.json();
+                console.log('👤 Student profile loaded:', data);
+                originalStudentUsername = data.username || '';
+                document.getElementById('user-name').textContent = data.username;
+                document.getElementById('profile-name').textContent = data.name || '';
+                document.getElementById('profile-roll').textContent = data.roll_number || '';
+                document.getElementById('profile-course').textContent = (data.department || '').toUpperCase();
+                document.getElementById('profile-email').textContent = data.email || '';
+
+        currentStudentId = data.roll_number || data.username; // Store student ID for later use
+                console.log(`✅ Student ID set to: ${currentStudentId}`);
+                
+                // Start typing animation with the loaded username
+                
+                startTypingAnimation(data.name );
+                // Load exams now that we have the student ID
+                loadStudentExams();
+
+                // fill settings inputs
+                document.getElementById('settings-name').value = data.name || '';
+                document.getElementById('settings-username').value = data.username || '';
+                document.getElementById('settings-roll').value = data.roll_number || '';
+                document.getElementById('settings-email').value = data.email || '';
+                const departmentSelect = document.getElementById('settings-course');
+                const departmentValue = (data.department || '').toUpperCase();
+                if (departmentSelect) {
+                    const hasOption = Array.from(departmentSelect.options).some(opt => opt.value === departmentValue);
+                    if (!hasOption && departmentValue) {
+                        const customOption = document.createElement('option');
+                        customOption.value = departmentValue;
+                        customOption.textContent = departmentValue;
+                        departmentSelect.appendChild(customOption);
+                    }
+                    departmentSelect.value = departmentValue;
+                }
+                document.getElementById('settings-phone').value = data.phone || '';
+
+                if(data.photo){
+                    currentStudentPhoto = data.photo;
+                    const ava = document.getElementById('profile-avatar');
+                    ava.style.backgroundImage = `url('${data.photo}')`;
+                    ava.classList.add('has-image');
+                    ava.innerHTML = '';
+                }
+            }catch(e){
+                console.error('❌ Profile load failed:', e);
+                // redirect to login if unauthenticated
+                window.location.href = 'student portal.html';
+            }
+        }
+
+        loadProfile();
+
+        // Listen for teacher-triggered result clears (fires in other tabs/windows)
+        window.addEventListener('storage', function(e){
+            try {
+                if(!e || !e.key) return;
+                if(e.key === 'teacher_cleared_results_trigger' || e.key === 'teacher_cleared_ui'){
+                    console.log('📡 Detected teacher-cleared-results trigger. Refreshing student results UI.');
+                    // Reload student exam lists and results from localStorage
+                    try { loadStudentExams(); } catch(err){ console.warn('Could not reload exams', err); }
+                    try { document.querySelectorAll('.result-exam').forEach(el => el.remove()); } catch(err){}
+                    try { loadStudentResults(); } catch(err){}
+                    // Notify the student
+                    try { alert('⚠️ Notice: Your exam results were cleared by the teacher.'); } catch(err){}
+                }
+            } catch(err){ console.warn('Storage listener error', err); }
+        });
+
+        window.saveSettings = async function(){
+            const username = document.getElementById('settings-username').value.trim();
+            const rollNumber = document.getElementById('settings-roll').value.trim();
+            const email = document.getElementById('settings-email').value.trim();
+            const phone = document.getElementById('settings-phone').value.trim();
+            const department = document.getElementById('settings-course').value.trim();
+
+            const usernamePattern = /^[a-z]+$/;
+            const emailPattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+            const phonePattern = /^\d{10}$/;
+
+            if(username !== originalStudentUsername && !usernamePattern.test(username)){
+                alert('Username must contain only lowercase letters (a-z)');
+                return;
+            }
+            if(!rollNumber){
+                alert('Roll number is required');
+                return;
+            }
+            if(!emailPattern.test(email) || (email.match(/@/g) || []).length !== 1){
+                alert('Email must be a valid email address');
+                return;
+            }
+            if(!phonePattern.test(phone)){
+                alert('Phone number must be exactly 10 digits');
+                return;
+            }
+            if(!department){
+                alert('Please select a department');
+                return;
+            }
+
+            const payload = {
+                name: document.getElementById('settings-name').value.trim(),
+                username: username,
+                roll_number: rollNumber,
+                email: email,
+                department: department,
+                phone: phone,
+                photo: currentStudentPhoto
+            };
+            try{
+                const res = await fetch('/api/student/update',{
+                    method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if(!res.ok){ alert(data.message||'Update failed'); return; }
+                currentStudentId = rollNumber || username;
+                alert('Profile updated');
+                loadProfile();
+            }catch(err){ alert('Error: '+err); }
+        };
+
+        window.changePassword = async function(){
+            const current = document.getElementById('settings-current-password').value;
+            const nw = document.getElementById('settings-new-password').value;
+            const conf = document.getElementById('settings-confirm-password').value;
+            if(nw !== conf){ alert('New passwords do not match'); return; }
+            try{
+                const res = await fetch('/api/student/change_password',{
+                    method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({current_password: current, new_password: nw})
+                });
+                const data = await res.json();
+                if(!res.ok){ alert(data.message||'Password change failed'); return; }
+                alert('Password changed');
+            }catch(err){ alert('Error: '+err); }
+        };
+
+    });
+})();
+
+let allResultExams = [];
+
+async function loadStudentExams() {
+    if (isExamInProgress || !currentStudentId) return;
+    try {
+        const res = await fetch('/api/student/exams', { credentials: 'same-origin' });
+        const data = await res.json();
+        if (!res.ok) {
+            console.error(data.message || 'Failed to load exams');
+            return;
+        }
+
+        const now = new Date();
+        allLoadedExams = (data.exams || []).filter(exam => {
+            const end = new Date(exam.endTime);
+            return exam.active === true && exam.submitted !== true && exam.missed !== true && now < end;
+        });
+
+        const container = document.getElementById('exam-list');
+        container.innerHTML = '';
+        if (allLoadedExams.length === 0) {
+            container.innerHTML = '<p style="color:#666; padding:20px;">No upcoming exams</p>';
+            return;
+        }
+
+        allLoadedExams.forEach((exam, index) => {
+            container.innerHTML += `
+                <div class="card" style="margin-bottom:15px;">
+                    <h3>${exam.name}</h3>
+                    <p><b>Start:</b> ${exam.startTime}</p>
+                    <p><b>Duration:</b> ${exam.duration} minutes</p>
+                    <p><button onclick="startStudentExam(${index})">Start Exam</button></p>
+                </div>
+            `;
+        });
+    } catch (err) {
+        console.error('loadStudentExams failed:', err);
+    }
+}
+
+async function loadStudentResults() {
+    if (!currentStudentId) return;
+    try {
+        const res = await fetch('/api/student/results', { credentials: 'same-origin' });
+        const data = await res.json();
+        if (!res.ok) {
+            console.error(data.message || 'Failed to load results');
+            return;
+        }
+
+        allResultExams = data.results || [];
+        const resultsDiv = document.querySelector('#results');
+        if (!resultsDiv) return;
+        document.querySelectorAll('.result-exam').forEach(el => el.remove());
+
+        if (allResultExams.length === 0) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'result-exam';
+            emptyDiv.id = 'all-results';
+            emptyDiv.innerHTML = `
+                <div class="card">
+                    <h3 style="color:#5a0f1b; margin-bottom:8px;">Your Exam Results</h3>
+                    <p style="color:#666;">No results available yet.</p>
+                </div>
+            `;
+            resultsDiv.appendChild(emptyDiv);
+            return;
+        }
+
+        const allResultsDiv = document.createElement('div');
+        allResultsDiv.className = 'result-exam';
+        allResultsDiv.id = 'all-results';
+
+        const tableHTML = allResultExams.map((exam) => {
+            const totalQuestions = exam.questions ? exam.questions.length : 0;
+            const score = exam.score || 0;
+            const statusBadge = exam.missed
+                ? '<span style="display:inline-block; background:#ff6b6b; color:#fff; padding:4px 10px; border-radius:999px; font-weight:800; font-size:12px; letter-spacing:0.4px;">MISSED</span>'
+                : '<span style="display:inline-block; background:#27ae60; color:#fff; padding:4px 10px; border-radius:999px; font-weight:800; font-size:12px; letter-spacing:0.4px;">DONE</span>';
+            const viewLink = `<button onclick="viewExamDetails('${exam.id}')" style="background:#5a0f1b; color:white; padding:5px 12px; border:none; border-radius:4px; cursor:pointer;">View</button>`;
+            const examDate = exam.startTime ? new Date(exam.startTime).toLocaleDateString() : '--';
+            return `
+                <tr>
+                    <td>${exam.name}</td>
+                    <td>${examDate}</td>
+                    <td>${exam.missed ? '--' : `${score} / ${totalQuestions}`}</td>
+                    <td>${statusBadge}</td>
+                    <td>${viewLink}</td>
+                </tr>
+            `;
+        }).join('');
+
+        allResultsDiv.innerHTML = `
+            <div class="card">
+                <h3 style="color:#5a0f1b; margin-bottom:15px;">Your Exam Results</h3>
+                <table>
+                    <tr><th>Exam</th><th>Date</th><th>Marks</th><th>Status</th><th>Action</th></tr>
+                    ${tableHTML}
+                </table>
+            </div>
+        `;
+        resultsDiv.appendChild(allResultsDiv);
+    } catch (err) {
+        console.error('loadStudentResults failed:', err);
+    }
+}
+
+async function startStudentExam(examIndex) {
+    if (!currentStudentId || !allLoadedExams[examIndex]) return;
+    const exam = allLoadedExams[examIndex];
+
+    try {
+        const res = await fetch(`/api/student/exams/${exam.id}/start`, {
+            method: 'POST',
+            credentials: 'same-origin'
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            alert(data.message || 'Unable to start exam');
+            await loadStudentExams();
+            return;
+        }
+
+        const fullExam = data.exam;
+        allLoadedExams[examIndex] = fullExam;
+        currentExamIndex = examIndex;
+        isExamInProgress = true;
+        await enterExamFullscreen();
+
+        const container = document.getElementById('exam-list');
+        const mobileExamTimer = isMobileExamViewport();
+        const timerDisplay = mobileExamTimer
+            ? `<div id="timerDisplay" style="position:fixed; top:60px; left:0; right:0; background:white; padding:12px 16px; margin:0; border-bottom:3px solid #5a0f1b; box-shadow:0 8px 20px rgba(0,0,0,0.12); z-index:1000; box-sizing:border-box;"><div style="display:flex; flex-direction:column; gap:10px;"><h2 style="margin:0; font-size:18px; line-height:1.2;">${fullExam.name}</h2><div style="align-self:flex-start; background:#ff6b6b; color:white; padding:10px 14px; border-radius:8px; font-weight:700; font-size:16px;">Time Left: <span id="timeRemaining">--:--</span></div></div></div>`
+            : `<div id="timerDisplay" style="position:sticky; top:0; background:white; padding:15px; margin:-25px -25px 20px -25px; border-radius:16px 16px 0 0; border-bottom:3px solid #5a0f1b; z-index:100;"><div style="display:flex; justify-content:space-between; align-items:center; gap:16px;"><h2 style="margin:0;">${fullExam.name}</h2><div style="background:#ff6b6b; color:white; padding:10px 20px; border-radius:8px; font-weight:700; font-size:18px;">Time Left: <span id="timeRemaining">--:--</span></div></div></div>`;
+        container.innerHTML = timerDisplay;
+        container.style.paddingTop = mobileExamTimer ? '112px' : '';
+
+        (fullExam.questions || []).forEach((q, i) => {
+            container.innerHTML += `
+                <div class="question-box">
+                    <h4>Q${i + 1}: ${formatMultilineText(q.question)}</h4>
+                    <textarea id="studentAnswer${i}" placeholder="Enter your answer"></textarea>
+                    <div id="result${i}" style="margin-top:8px;"></div>
+                </div>
+            `;
+        });
+
+        container.innerHTML += `<button onclick="submitStudentExam(${examIndex})">Submit Exam</button>`;
+        startExamTimer(examIndex, fullExam);
+    } catch (err) {
+        console.error('startStudentExam failed:', err);
+    }
+}
+
+async function autoSubmitExam(examIndex) {
+    await submitStudentExam(examIndex, true);
+}
+
+async function submitStudentExam(examIndex, silent = false) {
+    if (!currentStudentId || !allLoadedExams[examIndex]) return;
+    const exam = allLoadedExams[examIndex];
+    if (examTimerInterval) clearInterval(examTimerInterval);
+
+    let score = 0;
+    const studentAnswers = [];
+    const questionResults = [];
+
+    for (let i = 0; i < exam.questions.length; i++) {
+        const q = exam.questions[i];
+        const answer = (document.getElementById(`studentAnswer${i}`)?.value || '').trim();
+        studentAnswers.push(answer);
+
+        let isCorrect = false;
+        if (answer !== '') {
+            isCorrect = await evaluateQuestion(q.question, q.teacherAnswer, answer, q.type || 'direct');
+        }
+        questionResults.push(isCorrect);
+        if (isCorrect) score++;
+
+        const resultEl = document.getElementById(`result${i}`);
+        if (resultEl) {
+            resultEl.innerHTML = isCorrect ? '✔ Correct' : '✖ Wrong';
+            resultEl.style.color = isCorrect ? 'green' : 'red';
+        }
+    }
+
+    try {
+        const res = await fetch(`/api/student/exams/${exam.id}/submit`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ score, studentAnswers, questionResults })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            alert(data.message || 'Failed to submit exam');
+            return;
+        }
+    } catch (err) {
+        console.error('submit failed:', err);
+        alert('Failed to submit exam');
+        return;
+    }
+
+    if (!silent) alert(`Final Score: ${score} / ${exam.questions.length}`);
+    await exitExamFullscreen();
+    examTimerInterval = null;
+    currentExamIndex = null;
+    isExamInProgress = false;
+    const examContainer = document.getElementById('exam-list');
+    if (examContainer) {
+        examContainer.style.paddingTop = '';
+    }
+    await loadStudentExams();
+    await loadStudentResults();
+}
+
+function viewExamDetails(examId) {
+    const exam = allResultExams.find(e => String(e.id) === String(examId));
+    if (!exam) {
+        alert('Exam not found');
+        return;
+    }
+    const totalQuestions = exam.questions ? exam.questions.length : 0;
+    const score = exam.score || 0;
+    const percentage = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
+
+    let detailsHTML = `
+        <div style="background:${exam.missed ? '#fef2f2' : '#f0fdf4'}; padding:20px; border-radius:8px; margin-bottom:20px; border-left:4px solid ${exam.missed ? '#ff6b6b' : '#27ae60'};">
+            <h3 style="color:#5a0f1b; margin-top:0;">📋 Exam: ${exam.name}</h3>
+            <p><b>Test Date:</b> ${new Date(exam.startTime).toLocaleString()}</p>
+            <p><b>Your Score:</b> <span style="color:${exam.missed ? '#ff6b6b' : '#27ae60'}; font-weight:700; font-size:18px;">${exam.missed ? '--' : `${score} / ${totalQuestions}`}</span> ${exam.missed ? '' : `(${percentage}%)`}</p>
+            <p><b>Status:</b> <span style="display:inline-block; background:${exam.missed ? '#ff6b6b' : '#27ae60'}; color:#fff; font-weight:800; font-size:12px; letter-spacing:0.4px; padding:4px 10px; border-radius:999px;">${exam.missed ? 'MISSED' : 'DONE'}</span></p>
+        </div>
+    `;
+
+    (exam.questions || []).forEach((question, idx) => {
+        const studentAnswer = (exam.studentAnswers || [])[idx] || '';
+        const teacherAnswer = question.teacherAnswer || '';
+        const formattedQuestion = formatMultilineText(question.question || '');
+        const formattedTeacherAnswer = formatMultilineText(teacherAnswer);
+        const formattedStudentAnswer = studentAnswer ? formatMultilineText(studentAnswer) : '<em style="color:#999;">(Not answered)</em>';
+        const isCorrect = (exam.questionResults || [])[idx] === true;
+        const borderColor = exam.missed ? '#ff9800' : (isCorrect ? '#27ae60' : '#ff6b6b');
+        const bgColor = exam.missed ? '#fff7e6' : (isCorrect ? '#f0fdf4' : '#fef2f2');
+        const statusText = exam.missed ? '⚠ NOT ATTEMPTED' : (isCorrect ? '✓ CORRECT' : '✗ WRONG');
+        const statusColor = exam.missed ? '#ff9800' : (isCorrect ? '#27ae60' : '#ff6b6b');
+        detailsHTML += `
+            <div style="padding:15px; background:${bgColor}; border-radius:8px; border-left:4px solid ${borderColor}; margin-bottom:15px;">
+                <p style="margin:0 0 10px 0; font-weight:600; color:#333;"><b>Q${idx + 1}:</b> ${formattedQuestion}</p>
+                <p style="margin:8px 0; color:${statusColor}; font-weight:700; font-size:15px;"><b>${statusText}</b></p>
+                <p style="margin:8px 0; color:#555;"><b>Your Answer:</b> ${formattedStudentAnswer}</p>
+                <p style="margin:8px 0 0 0; color:#333;"><b>Correct Answer:</b> ${formattedTeacherAnswer}</p>
+            </div>
+        `;
+    });
+
+    const resultsSection = document.getElementById('results');
+    document.querySelectorAll('.result-exam').forEach(el => el.remove());
+    const detailsDiv = document.createElement('div');
+    detailsDiv.className = 'result-exam';
+    detailsDiv.innerHTML = `<div class="card"><button onclick="closeExamDetails()" style="background:#999; color:white; padding:8px 15px; margin-bottom:15px; border:none; border-radius:5px; cursor:pointer; font-weight:600;">← Back to Results</button>${detailsHTML}</div>`;
+    resultsSection.appendChild(detailsDiv);
+}
+
+// AUTO-REFRESH EXAM LIST ON STUDENT SIDE
+// Periodically reload the exam list to catch newly activated exams
+setInterval(function(){
+    if(currentStudentId && !isExamInProgress){
+        console.log('🔄 Auto-refreshing student exam list...');
+        try { loadStudentExams(); } catch(err){ console.warn('Auto-refresh failed:', err); }
+    }
+}, 30000); // Check every 30 seconds
+</script>
+
+</body>
+</html>
